@@ -9,8 +9,7 @@ API compatibility.
 from __future__ import annotations
 
 import abc
-import math
-from typing import Mapping, Optional, Sequence, Tuple, Union
+from typing import Mapping, Sequence, Union
 
 import numpy as np
 
@@ -46,8 +45,7 @@ class PLDPmf(abc.ABC):
 
     @property
     @abc.abstractmethod
-    def size(self) -> int:
-        ...
+    def size(self) -> int: ...
 
 
 class DensePLDPmf(PLDPmf):
@@ -70,14 +68,17 @@ class DensePLDPmf(PLDPmf):
         else:
             probs_list = list(probs)
         self._rust = RustPldPmf(
-            probs_list, int(lower_loss),
-            float(discretization_interval), float(infinity_mass),
+            probs_list,
+            int(lower_loss),
+            float(discretization_interval),
+            float(infinity_mass),
         )
         self._pessimistic = pessimistic_estimate
 
     @classmethod
-    def _from_rust(cls, rust_pmf: RustPldPmf,
-                   pessimistic: bool = True) -> "DensePLDPmf":
+    def _from_rust(
+        cls, rust_pmf: RustPldPmf, pessimistic: bool = True
+    ) -> "DensePLDPmf":
         """Wrap an existing Rust PMF without data copy."""
         obj = cls.__new__(cls)
         obj._rust = rust_pmf
@@ -85,17 +86,23 @@ class DensePLDPmf(PLDPmf):
         return obj
 
     @classmethod
-    def from_gaussian(cls, sigma: float, sensitivity: float, di: float,
-                      tail_bound: float = 10.0,
-                      is_add: bool = True) -> "DensePLDPmf":
+    def from_gaussian(
+        cls,
+        sigma: float,
+        sensitivity: float,
+        di: float,
+        tail_bound: float = 10.0,
+        is_add: bool = True,
+    ) -> "DensePLDPmf":
         """Build Gaussian PMF via Rust connect-the-dots."""
         return cls._from_rust(
             RustPldPmf.from_gaussian(sigma, sensitivity, di, tail_bound, is_add)
         )
 
     @classmethod
-    def from_laplace(cls, parameter: float, sensitivity: float, di: float,
-                     tail_bound: float = 10.0) -> "DensePLDPmf":
+    def from_laplace(
+        cls, parameter: float, sensitivity: float, di: float, tail_bound: float = 10.0
+    ) -> "DensePLDPmf":
         """Build Laplace PMF via Rust."""
         return cls._from_rust(
             RustPldPmf.from_laplace(parameter, sensitivity, di, tail_bound)
@@ -147,9 +154,7 @@ class DensePLDPmf(PLDPmf):
     def self_compose(self, count: int) -> "DensePLDPmf":
         if count <= 0:
             raise ValueError(f"count must be positive, got {count}")
-        return DensePLDPmf._from_rust(
-            self._rust.self_compose(count), self._pessimistic
-        )
+        return DensePLDPmf._from_rust(self._rust.self_compose(count), self._pessimistic)
 
 
 class SparsePLDPmf(PLDPmf):
@@ -188,8 +193,11 @@ class SparsePLDPmf(PLDPmf):
         for idx, prob in self._loss_probs.items():
             probs[idx - lower] = prob
         return DensePLDPmf(
-            probs, lower, self._discretization_interval,
-            self._infinity_mass, self._pessimistic,
+            probs,
+            lower,
+            self._discretization_interval,
+            self._infinity_mass,
+            self._pessimistic,
         )
 
     def get_delta_for_epsilon(
@@ -222,7 +230,9 @@ def create_pmf(
     Chooses DensePLDPmf or SparsePLDPmf based on support size.
     """
     if not rounded_pmf:
-        return SparsePLDPmf({}, discretization_interval, infinity_mass, pessimistic_estimate)
+        return SparsePLDPmf(
+            {}, discretization_interval, infinity_mass, pessimistic_estimate
+        )
 
     indices = sorted(rounded_pmf.keys())
     span = indices[-1] - indices[0] + 1

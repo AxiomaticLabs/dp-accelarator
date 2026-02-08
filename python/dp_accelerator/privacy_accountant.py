@@ -7,10 +7,9 @@ from __future__ import annotations
 
 import abc
 import enum
-import math
 from typing import Optional
 
-from dp_accelerator.dp_event import DpEvent, NoOpDpEvent
+from dp_accelerator.dp_event import DpEvent
 from dp_accelerator.dp_event_builder import DpEventBuilder
 
 

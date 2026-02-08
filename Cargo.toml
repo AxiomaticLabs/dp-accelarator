@@ -10,7 +10,9 @@ crate-type = ["cdylib"]
 
 [dependencies]
 pyo3 = { version = "0.20.0" }
-statrs = "0.16.0"  # CRITICAL: Adds erfc and gamma functions
+statrs = "0.16.0"
+rustfft = "6.2.0"
+libm = "0.2"
 
 [features]
 extension-module = ["pyo3/extension-module"]

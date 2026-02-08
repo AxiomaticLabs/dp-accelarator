@@ -7,7 +7,88 @@ guarantees with 3000x+ speedup over pure Python implementations.
 
 from ._core import compute_epsilon_batch
 
-__all__ = ["DPSGDAccountant", "compute_epsilon_batch"]
+# ── DpEvent classes ───────────────────────────────────────────────
+from .dp_event import (
+    DpEvent,
+    NoOpDpEvent,
+    NonPrivateDpEvent,
+    UnsupportedDpEvent,
+    GaussianDpEvent,
+    LaplaceDpEvent,
+    DiscreteLaplaceDpEvent,
+    RandomizedResponseDpEvent,
+    ZCDpEvent,
+    SelfComposedDpEvent,
+    ComposedDpEvent,
+    PoissonSampledDpEvent,
+    SampledWithReplacementDpEvent,
+    SampledWithoutReplacementDpEvent,
+    SingleEpochTreeAggregationDpEvent,
+    RepeatAndSelectDpEvent,
+    MixtureOfGaussiansDpEvent,
+)
+
+# ── Gaussian mechanism calibration ───────────────────────────────
+from .gaussian_mechanism import get_epsilon_gaussian, get_sigma_gaussian
+
+# ── RDP primitives & accountant ───────────────────────────────────
+from .rdp import (
+    DEFAULT_RDP_ORDERS,
+    RdpAccountant,
+    compute_rdp_poisson_subsampled_gaussian,
+    compute_rdp_sample_wor_gaussian,
+    compute_rdp_tree_aggregation,
+    compute_rdp_laplace,
+    compute_rdp_randomized_response,
+    compute_rdp_zcdp,
+    compute_rdp_repeat_and_select,
+    rdp_to_epsilon,
+    rdp_to_delta,
+)
+
+# ── Privacy accountant base ──────────────────────────────────────
+from .privacy_accountant import NeighboringRelation, PrivacyAccountant
+
+__all__ = [
+    "DPSGDAccountant",
+    "compute_epsilon_batch",
+    # DpEvent classes
+    "DpEvent",
+    "NoOpDpEvent",
+    "NonPrivateDpEvent",
+    "UnsupportedDpEvent",
+    "GaussianDpEvent",
+    "LaplaceDpEvent",
+    "DiscreteLaplaceDpEvent",
+    "RandomizedResponseDpEvent",
+    "ZCDpEvent",
+    "SelfComposedDpEvent",
+    "ComposedDpEvent",
+    "PoissonSampledDpEvent",
+    "SampledWithReplacementDpEvent",
+    "SampledWithoutReplacementDpEvent",
+    "SingleEpochTreeAggregationDpEvent",
+    "RepeatAndSelectDpEvent",
+    "MixtureOfGaussiansDpEvent",
+    # Gaussian mechanism
+    "get_epsilon_gaussian",
+    "get_sigma_gaussian",
+    # RDP
+    "DEFAULT_RDP_ORDERS",
+    "RdpAccountant",
+    "compute_rdp_poisson_subsampled_gaussian",
+    "compute_rdp_sample_wor_gaussian",
+    "compute_rdp_tree_aggregation",
+    "compute_rdp_laplace",
+    "compute_rdp_randomized_response",
+    "compute_rdp_zcdp",
+    "compute_rdp_repeat_and_select",
+    "rdp_to_epsilon",
+    "rdp_to_delta",
+    # Base
+    "NeighboringRelation",
+    "PrivacyAccountant",
+]
 
 __version__ = "0.1.0"
 

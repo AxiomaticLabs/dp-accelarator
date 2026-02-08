@@ -16,6 +16,7 @@ from dp_accelerator.privacy_accountant import PrivacyAccountant
 
 class BracketInterval:
     """Base class for bracket intervals."""
+
     pass
 
 
@@ -127,9 +128,7 @@ def _bisect(
 
 def calibrate_dp_mechanism(
     make_fresh_accountant: Callable[[], PrivacyAccountant],
-    make_event_from_param: Union[
-        Callable[[float], DpEvent], Callable[[int], DpEvent]
-    ],
+    make_event_from_param: Union[Callable[[float], DpEvent], Callable[[int], DpEvent]],
     target_epsilon: float,
     target_delta: float,
     bracket_interval: Optional[BracketInterval] = None,
@@ -191,9 +190,7 @@ def calibrate_dp_mechanism(
             bracket_interval, epsilon_gap
         )
     elif not isinstance(bracket_interval, ExplicitBracketInterval):
-        raise TypeError(
-            f"Unrecognized bracket_interval type: {type(bracket_interval)}"
-        )
+        raise TypeError(f"Unrecognized bracket_interval type: {type(bracket_interval)}")
 
     # Try scipy.optimize.brentq if available, fallback to bisection
     try:

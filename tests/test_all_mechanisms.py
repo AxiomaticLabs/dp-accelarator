@@ -9,12 +9,10 @@ import math
 import time
 import statistics
 import pytest
-import numpy as np
 
 from dp_accelerator import (
     RdpAccountant,
     DPSGDAccountant,
-    NeighboringRelation,
     compute_rdp_poisson_subsampled_gaussian,
     compute_rdp_sample_wor_gaussian,
     compute_rdp_tree_aggregation,
@@ -24,7 +22,6 @@ from dp_accelerator import (
     compute_rdp_repeat_and_select,
     rdp_to_epsilon,
     rdp_to_delta,
-    compute_epsilon_batch,
     DEFAULT_RDP_ORDERS,
 )
 
@@ -130,7 +127,9 @@ class TestRdpAccountantBasic:
         assert eps_two == pytest.approx(eps_one, rel=1e-10)
 
     def test_dpsgd_accountant_matches_rdp(self):
-        dpsgd = DPSGDAccountant(noise_multiplier=1.0, batch_size=600, dataset_size=60000)
+        dpsgd = DPSGDAccountant(
+            noise_multiplier=1.0, batch_size=600, dataset_size=60000
+        )
         eps_dpsgd = dpsgd.get_epsilon(steps=10000, delta=1e-5)
 
         acc = RdpAccountant(orders=dpsgd.orders)
@@ -194,9 +193,9 @@ class TestCrossValidation:
         python = self._python_rdp_poisson_gaussian(q, sigma, ORDERS)
         for i, (r, p) in enumerate(zip(rust, python)):
             if math.isfinite(p) and p > 0:
-                assert r == pytest.approx(p, rel=1e-6), (
-                    f"order={ORDERS[i]}: rust={r} python={p}"
-                )
+                assert r == pytest.approx(
+                    p, rel=1e-6
+                ), f"order={ORDERS[i]}: rust={r} python={p}"
             elif p == 0:
                 assert r == pytest.approx(0.0, abs=1e-15)
 
@@ -221,9 +220,9 @@ class TestCrossValidation:
         total_rdp_py = [float(r * steps) for r in rdp_python]
         eps_python, _ = self._python_epsilon(ORDERS, total_rdp_py, delta)
 
-        assert eps_rust == pytest.approx(eps_python, rel=1e-4), (
-            f"rust={eps_rust} python={eps_python}"
-        )
+        assert eps_rust == pytest.approx(
+            eps_python, rel=1e-4
+        ), f"rust={eps_rust} python={eps_python}"
 
     # ── Delta conversion ──
 
@@ -236,9 +235,9 @@ class TestCrossValidation:
         delta_rust, _ = rdp_to_delta(ORDERS, total_rdp, eps_rust)
         delta_python, _ = self._python_delta(ORDERS, total_rdp, eps_rust)
 
-        assert delta_rust == pytest.approx(delta_python, rel=1e-4), (
-            f"rust={delta_rust} python={delta_python}"
-        )
+        assert delta_rust == pytest.approx(
+            delta_python, rel=1e-4
+        ), f"rust={delta_rust} python={delta_python}"
 
     # ── Sampling without replacement ──
 
@@ -256,9 +255,9 @@ class TestCrossValidation:
         python = self._python_rdp_sample_wor(q, sigma, int_orders)
         for i, (r, p) in enumerate(zip(rust, python)):
             if math.isfinite(p) and p > 0:
-                assert r == pytest.approx(float(p), rel=1e-4), (
-                    f"order={int_orders[i]}: rust={r} python={p}"
-                )
+                assert r == pytest.approx(
+                    float(p), rel=1e-4
+                ), f"order={int_orders[i]}: rust={r} python={p}"
 
     # ── Tree aggregation ──
 
@@ -281,9 +280,9 @@ class TestCrossValidation:
         rust = compute_rdp_laplace(pure_eps, orders_subset)
         python = [rdp_mod._laplace_rdp(pure_eps, a) for a in orders_subset]
         for i, (r, p) in enumerate(zip(rust, python)):
-            assert r == pytest.approx(p, rel=1e-6), (
-                f"order={orders_subset[i]}: rust={r} python={p}"
-            )
+            assert r == pytest.approx(
+                p, rel=1e-6
+            ), f"order={orders_subset[i]}: rust={r} python={p}"
 
     # ── Randomized Response ──
 
@@ -299,9 +298,9 @@ class TestCrossValidation:
             for a in orders_subset
         ]
         for i, (r, pv) in enumerate(zip(rust, python)):
-            assert r == pytest.approx(float(pv), rel=1e-6), (
-                f"order={orders_subset[i]}: rust={r} python={pv}"
-            )
+            assert r == pytest.approx(
+                float(pv), rel=1e-6
+            ), f"order={orders_subset[i]}: rust={r} python={pv}"
 
     @pytest.mark.parametrize(
         "p,k",
@@ -311,13 +310,12 @@ class TestCrossValidation:
         orders_subset = [2.0, 5.0, 10.0, 50.0]
         rust = compute_rdp_randomized_response(p, k, orders_subset, True)
         python = [
-            rdp_mod._randomized_response_rdp_replace_one(p, k, a)
-            for a in orders_subset
+            rdp_mod._randomized_response_rdp_replace_one(p, k, a) for a in orders_subset
         ]
         for i, (r, pv) in enumerate(zip(rust, python)):
-            assert r == pytest.approx(float(pv), rel=1e-6), (
-                f"order={orders_subset[i]}: rust={r} python={pv}"
-            )
+            assert r == pytest.approx(
+                float(pv), rel=1e-6
+            ), f"order={orders_subset[i]}: rust={r} python={pv}"
 
     # ── Full accountant end-to-end ──
 
@@ -350,9 +348,9 @@ class TestCrossValidation:
         py_acc.compose(event, steps)
         eps_python = py_acc.get_epsilon(target_delta=delta)
 
-        assert eps_rust == pytest.approx(eps_python, rel=1e-4), (
-            f"config=({nm},{bs},{ds},{steps},{delta}): rust={eps_rust} python={eps_python}"
-        )
+        assert eps_rust == pytest.approx(
+            eps_python, rel=1e-4
+        ), f"config=({nm},{bs},{ds},{steps},{delta}): rust={eps_rust} python={eps_python}"
 
     # ── Repeat-and-select ──
 
@@ -361,13 +359,17 @@ class TestCrossValidation:
         rdp_single = list(
             rdp_mod._compute_rdp_poisson_subsampled_gaussian(0.01, 1.0, orders_subset)
         )
-        rust = compute_rdp_repeat_and_select(orders_subset, rdp_single, 10.0, float("inf"))
-        python = rdp_mod._compute_rdp_repeat_and_select(orders_subset, rdp_single, 10.0, float("inf"))
+        rust = compute_rdp_repeat_and_select(
+            orders_subset, rdp_single, 10.0, float("inf")
+        )
+        python = rdp_mod._compute_rdp_repeat_and_select(
+            orders_subset, rdp_single, 10.0, float("inf")
+        )
         for i, (r, p) in enumerate(zip(rust, python)):
             if math.isfinite(p):
-                assert r == pytest.approx(float(p), rel=1e-4), (
-                    f"order={orders_subset[i]}: rust={r} python={p}"
-                )
+                assert r == pytest.approx(
+                    float(p), rel=1e-4
+                ), f"order={orders_subset[i]}: rust={r} python={p}"
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -398,34 +400,44 @@ class TestSpeedBenchmarks:
             rdp_mod._compute_rdp_poisson_subsampled_gaussian, q, sigma, ORDERS
         )
         speedup = t_python / t_rust
-        print(f"\nPoisson-Gaussian: Rust={t_rust*1e3:.3f}ms Python={t_python*1e3:.3f}ms Speedup={speedup:.0f}x")
+        print(
+            f"\nPoisson-Gaussian: Rust={t_rust*1e3:.3f}ms Python={t_python*1e3:.3f}ms Speedup={speedup:.0f}x"
+        )
         assert speedup > 1, f"Rust should be faster, got {speedup:.1f}x"
 
     def test_epsilon_conversion_speed(self):
         q, sigma, steps = 0.01, 1.0, 10000
-        rdp = [r * steps for r in compute_rdp_poisson_subsampled_gaussian(q, sigma, ORDERS)]
+        rdp = [
+            r * steps for r in compute_rdp_poisson_subsampled_gaussian(q, sigma, ORDERS)
+        ]
         _, t_rust = _bench(rdp_to_epsilon, ORDERS, rdp, 1e-5)
         _, t_python = _bench(rdp_mod.compute_epsilon, ORDERS, rdp, 1e-5)
         speedup = t_python / t_rust
-        print(f"\nEpsilon conversion: Rust={t_rust*1e6:.1f}us Python={t_python*1e6:.1f}us Speedup={speedup:.0f}x")
+        print(
+            f"\nEpsilon conversion: Rust={t_rust*1e6:.1f}us Python={t_python*1e6:.1f}us Speedup={speedup:.0f}x"
+        )
         assert speedup > 1
 
     def test_sample_wor_speed(self):
         q, sigma = 0.01, 1.0
         int_orders = [float(i) for i in range(2, 65)]
         _, t_rust = _bench(compute_rdp_sample_wor_gaussian, q, sigma, int_orders)
-        _, t_python = _bench(rdp_mod._compute_rdp_sample_wor_gaussian, q, sigma, int_orders)
+        _, t_python = _bench(
+            rdp_mod._compute_rdp_sample_wor_gaussian, q, sigma, int_orders
+        )
         speedup = t_python / t_rust
-        print(f"\nSample-WOR Gaussian: Rust={t_rust*1e3:.3f}ms Python={t_python*1e3:.3f}ms Speedup={speedup:.0f}x")
+        print(
+            f"\nSample-WOR Gaussian: Rust={t_rust*1e3:.3f}ms Python={t_python*1e3:.3f}ms Speedup={speedup:.0f}x"
+        )
         assert speedup > 1
 
     def test_laplace_speed(self):
         _, t_rust = _bench(compute_rdp_laplace, 1.0, ORDERS)
-        _, t_python = _bench(
-            lambda: [rdp_mod._laplace_rdp(1.0, a) for a in ORDERS]
-        )
+        _, t_python = _bench(lambda: [rdp_mod._laplace_rdp(1.0, a) for a in ORDERS])
         speedup = t_python / t_rust
-        print(f"\nLaplace RDP: Rust={t_rust*1e6:.1f}us Python={t_python*1e6:.1f}us Speedup={speedup:.0f}x")
+        print(
+            f"\nLaplace RDP: Rust={t_rust*1e6:.1f}us Python={t_python*1e6:.1f}us Speedup={speedup:.0f}x"
+        )
         assert speedup > 1
 
     def test_full_dpsgd_speed(self):
@@ -451,5 +463,7 @@ class TestSpeedBenchmarks:
         _, t_rust = _bench(rust_fn)
         _, t_python = _bench(python_fn)
         speedup = t_python / t_rust
-        print(f"\nFull DP-SGD E2E: Rust={t_rust*1e3:.3f}ms Python={t_python*1e3:.3f}ms Speedup={speedup:.0f}x")
+        print(
+            f"\nFull DP-SGD E2E: Rust={t_rust*1e3:.3f}ms Python={t_python*1e3:.3f}ms Speedup={speedup:.0f}x"
+        )
         assert speedup > 10, f"Expected >10x speedup, got {speedup:.1f}x"

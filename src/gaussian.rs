@@ -41,7 +41,7 @@ pub fn get_epsilon_gaussian_impl(sigma: f64, delta: f64, tol: f64) -> f64 {
     if sigma < 0.0 {
         return f64::NAN;
     }
-    if delta < 0.0 || delta > 1.0 {
+    if !(0.0..=1.0).contains(&delta) {
         return f64::NAN;
     }
     if delta == 1.0 {
@@ -70,7 +70,12 @@ pub fn get_epsilon_gaussian_impl(sigma: f64, delta: f64, tol: f64) -> f64 {
     }
 
     // Bisection search (Brent-like)
-    brentq(|eps| get_log_delta(sigma, eps) - log_delta, eps_lo, eps_hi, tol)
+    brentq(
+        |eps| get_log_delta(sigma, eps) - log_delta,
+        eps_lo,
+        eps_hi,
+        tol,
+    )
 }
 
 /// Computes the optimal noise std for the Gaussian mechanism.
@@ -86,7 +91,7 @@ pub fn get_sigma_gaussian_impl(epsilon: f64, delta: f64, tol: f64) -> f64 {
     if epsilon < 0.0 {
         return f64::NAN;
     }
-    if delta < 0.0 || delta > 1.0 {
+    if !(0.0..=1.0).contains(&delta) {
         return f64::NAN;
     }
     if delta == 1.0 || epsilon.is_infinite() {

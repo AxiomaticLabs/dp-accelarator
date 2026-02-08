@@ -1,13 +1,17 @@
 """Quick smoke test for all new modules."""
+
 import sys
+
 try:
     from dp_accelerator import (
-        RdpAccountant, DPSGDAccountant, NeighboringRelation,
-        GaussianDpEvent, LaplaceDpEvent, PoissonSampledDpEvent,
-        DpEventBuilder, calibrate_dp_mechanism,
-        get_epsilon_gaussian, get_sigma_gaussian,
+        RdpAccountant,
+        GaussianDpEvent,
+        PoissonSampledDpEvent,
+        get_epsilon_gaussian,
+        get_sigma_gaussian,
     )
-    from dp_accelerator.pld import PLDAccountant, PrivacyLossDistribution
+    from dp_accelerator.pld import PLDAccountant
+
     print("All imports successful!")
 
     # Test gaussian mechanism
@@ -39,5 +43,7 @@ try:
     print("ALL SMOKE TESTS PASSED!")
 except Exception as ex:
     print(f"FAILED: {ex}", file=sys.stderr)
-    import traceback; traceback.print_exc()
+    import traceback
+
+    traceback.print_exc()
     sys.exit(1)

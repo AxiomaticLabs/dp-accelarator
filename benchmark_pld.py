@@ -1,4 +1,5 @@
 """Benchmark: Rust PLD backend vs Google dp_accounting PLD."""
+
 import time
 import sys
 

@@ -51,7 +51,9 @@ class PLDAccountant(PrivacyAccountant):
     ):
         super().__init__(neighboring_relation)
         self._contains_non_dp_event = False
-        self._pld = PLD.identity(value_discretization_interval=value_discretization_interval)
+        self._pld = PLD.identity(
+            value_discretization_interval=value_discretization_interval
+        )
         self._value_discretization_interval = value_discretization_interval
 
     def _maybe_compose(

@@ -84,12 +84,18 @@ class PrivacyLossDistribution:
 
         if sampling_prob < 1.0:
             return cls._from_subsampled_gaussian(
-                sigma, s, value_discretization_interval, sampling_prob,
+                sigma,
+                s,
+                value_discretization_interval,
+                sampling_prob,
                 neighboring_relation,
             )
 
         return cls._from_gaussian_direct(
-            sigma, s, value_discretization_interval, neighboring_relation,
+            sigma,
+            s,
+            value_discretization_interval,
+            neighboring_relation,
         )
 
     @classmethod
@@ -102,14 +108,22 @@ class PrivacyLossDistribution:
     ) -> "PrivacyLossDistribution":
         """Build PLD for Gaussian mechanism — delegated to Rust."""
         pmf_remove = pld_pmf.DensePLDPmf.from_gaussian(
-            sigma, sensitivity, di, 10.0, is_add=True,
+            sigma,
+            sensitivity,
+            di,
+            10.0,
+            is_add=True,
         )
         if neighboring_relation in (
             NeighboringRelation.ADD_OR_REMOVE_ONE,
             NeighboringRelation.REPLACE_SPECIAL,
         ):
             pmf_add = pld_pmf.DensePLDPmf.from_gaussian(
-                sigma, sensitivity, di, 10.0, is_add=False,
+                sigma,
+                sensitivity,
+                di,
+                10.0,
+                is_add=False,
             )
             return cls(pmf_remove, pmf_add)
         else:
@@ -178,7 +192,8 @@ class PrivacyLossDistribution:
         # Build PMF using histogram
         bin_indices = np.clip(
             np.round(pl_vals_v / di).astype(np.int64) - pl_min_d,
-            0, n_bins - 1,
+            0,
+            n_bins - 1,
         )
         # Weight by the PDF of the upper distribution
         pdf_upper = stats.norm.pdf(x_vals_v, loc=0, scale=sigma)
@@ -213,7 +228,8 @@ class PrivacyLossDistribution:
 
                 bin_idx_r = np.clip(
                     np.round(pl_vals_r / di).astype(np.int64) - pl_min_r,
-                    0, n_bins_r - 1,
+                    0,
+                    n_bins_r - 1,
                 )
                 pdf_upper_r = stats.norm.pdf(x_vals_r, loc=0, scale=sigma)
                 dx_r = x_vals_r[1] - x_vals_r[0] if len(x_vals_r) > 1 else 1.0
@@ -437,10 +453,12 @@ class PrivacyLossDistribution:
         log_mu_upper = stats.norm.logpdf(x_vals, loc=0, scale=sigma)
 
         # log(mu_lower(x)) = logsumexp over components
-        log_components = np.array([
-            np.log(p) + stats.norm.logpdf(x_vals, loc=c, scale=sigma)
-            for c, p in zip(sensitivities, sampling_probs)
-        ])
+        log_components = np.array(
+            [
+                np.log(p) + stats.norm.logpdf(x_vals, loc=c, scale=sigma)
+                for c, p in zip(sensitivities, sampling_probs)
+            ]
+        )
         log_mu_lower = _logsumexp_axis0(log_components)
 
         pl_vals = log_mu_upper - log_mu_lower

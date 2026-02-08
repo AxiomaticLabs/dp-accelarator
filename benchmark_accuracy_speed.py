@@ -12,16 +12,18 @@ import time
 import statistics
 import numpy as np
 import dp_accounting
-from dp_accelerator import DPSGDAccountant, compute_epsilon_batch
+from dp_accelerator import compute_epsilon_batch
 
 # ─────────────────────────────────────────────────────────────────
 # Shared RDP orders (same in both implementations)
 # ─────────────────────────────────────────────────────────────────
-ORDERS = np.concatenate((
-    np.linspace(1.01, 8, num=50),
-    np.arange(8, 64),
-    np.linspace(65, 512, num=10, dtype=int),
-)).tolist()
+ORDERS = np.concatenate(
+    (
+        np.linspace(1.01, 8, num=50),
+        np.arange(8, 64),
+        np.linspace(65, 512, num=10, dtype=int),
+    )
+).tolist()
 
 
 # ═════════════════════════════════════════════════════════════════
@@ -42,7 +44,10 @@ def python_compute_epsilon(q, noise_multiplier, steps, delta, orders=ORDERS):
 
 def python_compute_epsilon_batch(q, noise_multiplier, steps_list, delta, orders=ORDERS):
     """Compute epsilon for multiple step counts using Python (one at a time)."""
-    return [python_compute_epsilon(q, noise_multiplier, s, delta, orders) for s in steps_list]
+    return [
+        python_compute_epsilon(q, noise_multiplier, s, delta, orders)
+        for s in steps_list
+    ]
 
 
 # ═════════════════════════════════════════════════════════════════
@@ -82,16 +87,16 @@ def benchmark_fn(fn, *args, warmup=3, repeats=10, **kwargs):
 # ═════════════════════════════════════════════════════════════════
 CONFIGS = [
     # (name, noise_multiplier, batch_size, dataset_size, steps, delta)
-    ("MNIST-small",       1.0,  600,   60_000,    1_000,  1e-5),
-    ("MNIST-typical",     1.0,  600,   60_000,   10_000,  1e-5),
-    ("MNIST-long",        1.0,  600,   60_000,   50_000,  1e-5),
-    ("ImageNet-like",     0.5,  256,  1_200_000,  90_000,  1e-6),
-    ("Low-noise",         0.3,  128,   50_000,    5_000,  1e-5),
-    ("High-noise",        4.0,  512,  100_000,   20_000,  1e-5),
-    ("Tiny-dataset",      1.0,   32,    1_000,    2_000,  1e-3),
-    ("Large-dataset",     1.5, 1024, 10_000_000, 100_000,  1e-7),
-    ("Very-high-sigma",  10.0,  256,   60_000,   10_000,  1e-5),
-    ("Edge-high-q",       1.0, 5000,   10_000,    1_000,  1e-5),
+    ("MNIST-small", 1.0, 600, 60_000, 1_000, 1e-5),
+    ("MNIST-typical", 1.0, 600, 60_000, 10_000, 1e-5),
+    ("MNIST-long", 1.0, 600, 60_000, 50_000, 1e-5),
+    ("ImageNet-like", 0.5, 256, 1_200_000, 90_000, 1e-6),
+    ("Low-noise", 0.3, 128, 50_000, 5_000, 1e-5),
+    ("High-noise", 4.0, 512, 100_000, 20_000, 1e-5),
+    ("Tiny-dataset", 1.0, 32, 1_000, 2_000, 1e-3),
+    ("Large-dataset", 1.5, 1024, 10_000_000, 100_000, 1e-7),
+    ("Very-high-sigma", 10.0, 256, 60_000, 10_000, 1e-5),
+    ("Edge-high-q", 1.0, 5000, 10_000, 1_000, 1e-5),
 ]
 
 
@@ -101,10 +106,14 @@ CONFIGS = [
 def run_accuracy_tests():
     """Compare epsilon values between Python and Rust implementations."""
     print("=" * 85)
-    print("PART 1: ACCURACY COMPARISON — Python (dp_accounting) vs Rust (dp-accelerator)")
+    print(
+        "PART 1: ACCURACY COMPARISON — Python (dp_accounting) vs Rust (dp-accelerator)"
+    )
     print("=" * 85)
     print()
-    print(f"{'Config':<20} {'Python ε':>14} {'Rust ε':>14} {'Abs Diff':>12} {'Rel Diff':>12} {'Match?':>8}")
+    print(
+        f"{'Config':<20} {'Python ε':>14} {'Rust ε':>14} {'Abs Diff':>12} {'Rel Diff':>12} {'Match?':>8}"
+    )
     print("─" * 85)
 
     all_pass = True
@@ -161,7 +170,7 @@ def run_speed_single():
         _, py_time = benchmark_fn(python_compute_epsilon, q, sigma, steps, delta)
         _, rs_time = benchmark_fn(rust_compute_epsilon, q, sigma, steps, delta)
 
-        speedup = py_time / rs_time if rs_time > 0 else float('inf')
+        speedup = py_time / rs_time if rs_time > 0 else float("inf")
         speedups.append(speedup)
 
         print(
@@ -198,14 +207,22 @@ def run_speed_batch():
     for n in batch_sizes_to_test:
         steps_list = list(range(100, 100 + n * 100, 100))  # [100, 200, ..., n*100]
 
-        _, py_time = benchmark_fn(python_compute_epsilon_batch, q, sigma, steps_list, delta, warmup=2, repeats=5)
-        _, rs_time = benchmark_fn(rust_compute_epsilon_batch, q, sigma, steps_list, delta, warmup=2, repeats=5)
-
-        speedup = py_time / rs_time if rs_time > 0 else float('inf')
-
-        print(
-            f"{n:<12} {py_time*1000:>12.2f} {rs_time*1000:>12.4f} {speedup:>9.0f}x"
+        _, py_time = benchmark_fn(
+            python_compute_epsilon_batch,
+            q,
+            sigma,
+            steps_list,
+            delta,
+            warmup=2,
+            repeats=5,
         )
+        _, rs_time = benchmark_fn(
+            rust_compute_epsilon_batch, q, sigma, steps_list, delta, warmup=2, repeats=5
+        )
+
+        speedup = py_time / rs_time if rs_time > 0 else float("inf")
+
+        print(f"{n:<12} {py_time*1000:>12.2f} {rs_time*1000:>12.4f} {speedup:>9.0f}x")
 
     print()
 
@@ -233,10 +250,28 @@ def run_scaling_orders():
     for n_orders in order_counts:
         orders = np.linspace(1.01, 512, num=n_orders).tolist()
 
-        _, py_time = benchmark_fn(python_compute_epsilon, q, sigma, steps, delta, orders=orders, warmup=2, repeats=5)
-        _, rs_time = benchmark_fn(rust_compute_epsilon, q, sigma, steps, delta, orders=orders, warmup=2, repeats=5)
+        _, py_time = benchmark_fn(
+            python_compute_epsilon,
+            q,
+            sigma,
+            steps,
+            delta,
+            orders=orders,
+            warmup=2,
+            repeats=5,
+        )
+        _, rs_time = benchmark_fn(
+            rust_compute_epsilon,
+            q,
+            sigma,
+            steps,
+            delta,
+            orders=orders,
+            warmup=2,
+            repeats=5,
+        )
 
-        speedup = py_time / rs_time if rs_time > 0 else float('inf')
+        speedup = py_time / rs_time if rs_time > 0 else float("inf")
 
         print(
             f"{n_orders:<12} {py_time*1000:>12.3f} {rs_time*1000:>12.4f} {speedup:>9.0f}x"
@@ -306,7 +341,9 @@ def run_stress_test():
     # Python — sample 20 points to estimate total time
     sample_indices = list(range(0, 10_000, 500))  # 20 points
     t0 = time.perf_counter()
-    py_subset = [python_compute_epsilon(q, sigma, steps_list[i], delta) for i in sample_indices]
+    py_subset = [
+        python_compute_epsilon(q, sigma, steps_list[i], delta) for i in sample_indices
+    ]
     t1 = time.perf_counter()
     py_time_subset = t1 - t0
 
@@ -314,11 +351,16 @@ def run_stress_test():
     py_estimated_total = py_time_subset * (10_000 / len(sample_indices))
 
     # Accuracy on the sampled subset
-    diffs = [abs(py_subset[j] - rs_results[sample_indices[j]]) / max(abs(py_subset[j]), 1e-15)
-             for j in range(len(sample_indices))]
+    diffs = [
+        abs(py_subset[j] - rs_results[sample_indices[j]])
+        / max(abs(py_subset[j]), 1e-15)
+        for j in range(len(sample_indices))
+    ]
 
     print(f"Rust:   {len(steps_list):,} epsilon values in {rust_time*1000:.2f} ms")
-    print(f"Python: {len(sample_indices)} epsilon values in {py_time_subset*1000:.2f} ms")
+    print(
+        f"Python: {len(sample_indices)} epsilon values in {py_time_subset*1000:.2f} ms"
+    )
     print(f"Python estimated for {len(steps_list):,}: {py_estimated_total:.2f} s")
     print(f"Speedup (estimated): {py_estimated_total / rust_time:.0f}x")
     print(f"Max relative diff on sample: {max(diffs):.2e}")
@@ -330,9 +372,15 @@ def run_stress_test():
 # ═════════════════════════════════════════════════════════════════
 def main():
     print()
-    print("╔═══════════════════════════════════════════════════════════════════════════════════╗")
-    print("║  dp-accelerator (Rust) vs dp_accounting (Python) — Full Benchmark Suite         ║")
-    print("╚═══════════════════════════════════════════════════════════════════════════════════╝")
+    print(
+        "╔═══════════════════════════════════════════════════════════════════════════════════╗"
+    )
+    print(
+        "║  dp-accelerator (Rust) vs dp_accounting (Python) — Full Benchmark Suite         ║"
+    )
+    print(
+        "╚═══════════════════════════════════════════════════════════════════════════════════╝"
+    )
     print()
 
     accuracy_pass, max_diff = run_accuracy_tests()
@@ -347,9 +395,13 @@ def main():
     print("SUMMARY")
     print("=" * 85)
     print()
-    print(f"  Accuracy:  {'PASS' if accuracy_pass else 'FAIL'} (max relative diff: {max_diff:.2e})")
-    print(f"  Speed:     Median {statistics.median(single_speedups):.0f}x faster  "
-          f"(range: {min(single_speedups):.0f}x – {max(single_speedups):.0f}x)")
+    print(
+        f"  Accuracy:  {'PASS' if accuracy_pass else 'FAIL'} (max relative diff: {max_diff:.2e})"
+    )
+    print(
+        f"  Speed:     Median {statistics.median(single_speedups):.0f}x faster  "
+        f"(range: {min(single_speedups):.0f}x – {max(single_speedups):.0f}x)"
+    )
     print()
     if accuracy_pass:
         print("  ✓ dp-accelerator is a correct AND fast drop-in replacement")

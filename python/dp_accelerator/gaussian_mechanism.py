@@ -12,9 +12,7 @@ from dp_accelerator._core import (
 )
 
 
-def get_epsilon_gaussian(
-    sigma: float, delta: float, tol: float = 1e-12
-) -> float:
+def get_epsilon_gaussian(sigma: float, delta: float, tol: float = 1e-12) -> float:
     """Compute epsilon for the Gaussian mechanism.
 
     Uses the analytical method from https://arxiv.org/pdf/1805.06530.
@@ -38,9 +36,7 @@ def get_epsilon_gaussian(
     return _get_epsilon_gaussian_rust(sigma, delta, tol)
 
 
-def get_sigma_gaussian(
-    epsilon: float, delta: float, tol: float = 1e-12
-) -> float:
+def get_sigma_gaussian(epsilon: float, delta: float, tol: float = 1e-12) -> float:
     """Compute the noise std for the Gaussian mechanism.
 
     Uses the analytical method from https://arxiv.org/pdf/1805.06530.

@@ -7,7 +7,6 @@ amplification mechanism, or composition. API-compatible with
 
 from __future__ import annotations
 
-import dataclasses
 from typing import List, Sequence, Union
 
 

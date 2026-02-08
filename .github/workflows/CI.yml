@@ -71,4 +71,4 @@ jobs:
       - name: Build and Install (Dev)
         run: maturin develop
       - name: Run Python Tests
-        run: pytest -v
+        run: pytest tests/ -v

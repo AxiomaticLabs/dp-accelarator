@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Tuple
 
 def compute_epsilon_batch(
     q: float,
@@ -7,16 +7,41 @@ def compute_epsilon_batch(
     orders: List[float],
     delta: float,
 ) -> List[float]:
-    """Compute epsilon values for multiple step counts using the Rust backend.
+    """Compute epsilon values for multiple step counts using the Rust backend."""
+    ...
 
-    Args:
-        q: Sampling probability (batch_size / dataset_size)
-        noise_multiplier: The noise multiplier (sigma)
-        steps_list: List of training step counts
-        orders: RDP orders (alpha values) to optimise over
-        delta: Target delta for (epsilon, delta)-DP
+def get_epsilon_gaussian(sigma: float, delta: float, tol: float) -> float:
+    """Compute epsilon for the Gaussian mechanism (Balle & Wang)."""
+    ...
 
-    Returns:
-        List of epsilon values, one for each step count
-    """
+def get_sigma_gaussian(epsilon: float, delta: float, tol: float) -> float:
+    """Compute optimal noise std for the Gaussian mechanism."""
+    ...
+
+def compute_rdp_poisson_subsampled_gaussian(
+    q: float, sigma: float, orders: List[float]
+) -> List[float]:
+    """RDP for Poisson-subsampled Gaussian mechanism."""
+    ...
+
+def compute_rdp_sample_wor_gaussian(
+    q: float, sigma: float, orders: List[float]
+) -> List[float]:
+    """RDP for sampling-without-replacement Gaussian mechanism."""
+    ...
+
+def compute_rdp_laplace(pure_eps: float, orders: List[float]) -> List[float]:
+    """RDP for the Laplace mechanism."""
+    ...
+
+def rdp_to_epsilon_vec(
+    orders: List[float], rdp_values: List[float], delta: float
+) -> Tuple[float, float]:
+    """Convert RDP to epsilon. Returns (epsilon, optimal_order)."""
+    ...
+
+def rdp_to_delta_vec(
+    orders: List[float], rdp_values: List[float], epsilon: float
+) -> Tuple[float, float]:
+    """Convert RDP to delta. Returns (delta, optimal_order)."""
     ...

@@ -23,17 +23,10 @@ from dp_accelerator._core import (
     rdp_to_delta_vec as _rdp_to_delta_rust,
 )
 from dp_accelerator.dp_event import (
-    DpEvent,
     GaussianDpEvent,
-    LaplaceDpEvent,
     PoissonSampledDpEvent,
-    SampledWithoutReplacementDpEvent,
     SelfComposedDpEvent,
     ComposedDpEvent,
-    SingleEpochTreeAggregationDpEvent,
-    RandomizedResponseDpEvent,
-    ZCDpEvent,
-    RepeatAndSelectDpEvent,
     NoOpDpEvent,
 )
 from dp_accelerator.privacy_accountant import (
@@ -72,9 +65,7 @@ def compute_rdp_sample_wor_gaussian(
     return _rdp_sample_wor_rust(q, sigma, list(orders))
 
 
-def compute_rdp_laplace(
-    pure_eps: float, orders: Sequence[float]
-) -> List[float]:
+def compute_rdp_laplace(pure_eps: float, orders: Sequence[float]) -> List[float]:
     """RDP for the Laplace mechanism (Rust-accelerated)."""
     return _rdp_laplace_rust(pure_eps, list(orders))
 
@@ -196,15 +187,16 @@ def _rr_rdp_replace_one(p: float, k: int, alpha: float) -> float:
     if math.isinf(alpha):
         return log_1
 
-    return float(logsumexp(
-        a=[alpha * log_1, -alpha * log_1, 0.0],
-        b=[p / k, 1 - p + p / k, (1 - 2.0 / k) * p],
-    ) / (alpha - 1.0))
+    return float(
+        logsumexp(
+            a=[alpha * log_1, -alpha * log_1, 0.0],
+            b=[p / k, 1 - p + p / k, (1 - 2.0 / k) * p],
+        )
+        / (alpha - 1.0)
+    )
 
 
-def compute_rdp_zcdp(
-    xi: float, rho: float, orders: Sequence[float]
-) -> List[float]:
+def compute_rdp_zcdp(xi: float, rho: float, orders: Sequence[float]) -> List[float]:
     """RDP for a mechanism satisfying (xi, rho)-zCDP.
 
     RDP(alpha) = xi + rho * alpha.
@@ -252,17 +244,12 @@ def compute_rdp_repeat_and_select(
         # Truncated Negative Binomial (includes Geometric & Logarithmic)
         gamma = _gamma_truncated_negative_binomial(shape, mean)
         c = (1 + shape) * np.min(
-            (1.0 - 1.0 / orders_arr[orders_arr > 1])
-            * rdp_arr[orders_arr > 1]
+            (1.0 - 1.0 / orders_arr[orders_arr > 1]) * rdp_arr[orders_arr > 1]
             - math.log(gamma) / orders_arr[orders_arr > 1]
         )
         for i in range(len(orders_arr)):
             if orders_arr[i] > 1.0:
-                rdp_out[i] = (
-                    rdp_arr[i]
-                    + math.log(mean) / (orders_arr[i] - 1.0)
-                    + c
-                )
+                rdp_out[i] = rdp_arr[i] + math.log(mean) / (orders_arr[i] - 1.0) + c
         # Apply monotonicity
         for i in range(len(orders_arr)):
             rdp_out[i] = min(
@@ -284,9 +271,7 @@ def _compute_delta_for_repeat_select(
             continue
         log_delta = 0.5 * math.log1p(-math.exp(-r)) if r < 700 else 0.0
         if a > 1.01:
-            rdp_bound = (
-                (a - 1.0) * (r - epsilon + math.log1p(-1.0 / a)) - math.log(a)
-            )
+            rdp_bound = (a - 1.0) * (r - epsilon + math.log1p(-1.0 / a)) - math.log(a)
             log_delta = min(log_delta, rdp_bound)
         log_deltas.append(log_delta)
     best = min(log_deltas)
@@ -307,18 +292,14 @@ def _logx_over_xm1(x: float) -> float:
     return math.log(x) / (x - 1.0)
 
 
-def _truncated_negative_binomial_mean(
-    gamma: float, shape: float
-) -> float:
+def _truncated_negative_binomial_mean(gamma: float, shape: float) -> float:
     """Mean of the truncated negative binomial distribution."""
     if shape == 0:
         return -1.0 / math.log1p(-gamma)
     return shape * gamma * _expm1_over_x(shape * math.log1p(-gamma)) / (1 - gamma)
 
 
-def _gamma_truncated_negative_binomial(
-    shape: float, mean: float
-) -> float:
+def _gamma_truncated_negative_binomial(shape: float, mean: float) -> float:
     """Find gamma for the truncated negative binomial with given mean."""
     # Binary search for gamma in (0, 1)
     lo, hi = 1e-15, 1.0 - 1e-15
@@ -404,7 +385,9 @@ class RdpAccountant(PrivacyAccountant):
 
         if isinstance(event, GaussianDpEvent):
             if do_compose:
-                rdp = [alpha / (2.0 * event.noise_multiplier ** 2) for alpha in self._orders]
+                rdp = [
+                    alpha / (2.0 * event.noise_multiplier**2) for alpha in self._orders
+                ]
                 for i in range(len(self._rdp)):
                     self._rdp[i] += rdp[i] * count
             return None

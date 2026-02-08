@@ -8,7 +8,13 @@ using the high-performance Rust backend.
 from . import DPSGDAccountant
 
 
-def compute_epsilon(noise_multiplier: float, batch_size: int, dataset_size: int, num_steps: int, delta: float = 1e-5) -> float:
+def compute_epsilon(
+    noise_multiplier: float,
+    batch_size: int,
+    dataset_size: int,
+    num_steps: int,
+    delta: float = 1e-5,
+) -> float:
     """
     Drop-in replacement for JAX Privacy's compute_epsilon function.
 
@@ -26,7 +32,9 @@ def compute_epsilon(noise_multiplier: float, batch_size: int, dataset_size: int,
     return accountant.get_epsilon(num_steps, delta)
 
 
-def compute_rdp_curve(noise_multiplier: float, batch_size: int, dataset_size: int, num_steps: int) -> dict:
+def compute_rdp_curve(
+    noise_multiplier: float, batch_size: int, dataset_size: int, num_steps: int
+) -> dict:
     """
     Compute the full RDP curve for analysis.
 

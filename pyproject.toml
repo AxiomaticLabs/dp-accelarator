@@ -21,8 +21,8 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/AxiomaticLabs/dp-accelerator"
-Repository = "https://github.com/AxiomaticLabs/dp-accelerator"
+Homepage = "https://github.com/AxiomaticLabs/dp-accelarator"
+Repository = "https://github.com/AxiomaticLabs/dp-accelarator"
 
 [tool.maturin]
 python-source = "python"

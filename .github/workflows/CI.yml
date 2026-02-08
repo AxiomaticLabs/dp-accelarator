@@ -6,7 +6,6 @@ on:
   pull_request:
 
 jobs:
-  # 1. LINTING & FORMATTING (Fail Fast)
   lint:
     runs-on: ubuntu-latest
     steps:
@@ -27,8 +26,6 @@ jobs:
         run: cargo fmt -- --check
       - name: Run Rust Lint (Clippy)
         run: cargo clippy -- -D warnings
-
-  # 2. TEST & BUILD (Matrix Strategy)
   test:
     needs: lint
     name: Test on ${{ matrix.os }}
@@ -37,25 +34,16 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
         python-version: ['3.10', '3.11']
-    
     steps:
       - uses: actions/checkout@v4
-      
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-      
       - name: Install build tools
         run: pip install maturin pytest
-      
-      # Check Rust Tests
       - name: Run Rust Tests
-        run: cargo test
-      
-      # Build & Install Package (Dev Mode)
+        run: cargo test --no-default-features -v
       - name: Build and Install (Dev)
         run: maturin develop
-      
-      # Run Python Tests (using the installed Rust module)
       - name: Run Python Tests
-        run: pytest
+        run: pytest -v

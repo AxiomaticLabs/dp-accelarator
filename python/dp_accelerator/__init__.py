@@ -35,17 +35,32 @@ class DPSGDAccountant:
             noise_multiplier: The noise multiplier (sigma) added to gradients
             batch_size: Size of each training batch
             dataset_size: Total size of the training dataset
+
+        Raises:
+            ValueError: If parameters are invalid
         """
+        if noise_multiplier < 0:
+            raise ValueError("noise_multiplier must be non-negative")
+        if batch_size <= 0:
+            raise ValueError("batch_size must be positive")
+        if dataset_size <= 0:
+            raise ValueError("dataset_size must be positive")
+        if batch_size > dataset_size:
+            raise ValueError("batch_size cannot be larger than dataset_size")
+
         self.noise_multiplier = noise_multiplier
         self.q = batch_size / dataset_size  # Sampling probability
 
         # Use the same RDP orders as Google's dp_accounting library
         import numpy as np
-        self.orders = np.concatenate((
-            np.linspace(1.01, 8, num=50),
-            np.arange(8, 64),
-            np.linspace(65, 512, num=10, dtype=int),
-        )).tolist()
+
+        self.orders = np.concatenate(
+            (
+                np.linspace(1.01, 8, num=50),
+                np.arange(8, 64),
+                np.linspace(65, 512, num=10, dtype=int),
+            )
+        ).tolist()
 
     def get_epsilon(self, steps: int, delta: float = 1e-5) -> float:
         """Compute the epsilon privacy guarantee using Rust backend.
@@ -59,11 +74,7 @@ class DPSGDAccountant:
         """
         # CALLING RUST DIRECTLY with batch of one
         result = compute_epsilon_batch(
-            self.q, 
-            self.noise_multiplier, 
-            [steps], 
-            self.orders, 
-            delta
+            self.q, self.noise_multiplier, [steps], self.orders, delta
         )
         return result[0]
 
@@ -80,24 +91,25 @@ class DPSGDAccountant:
         # RDP(alpha) = alpha * q^2 / (2 * sigma^2) * steps
         rdp_values = []
         for alpha in self.orders:
-            rdp_per_step = alpha * self.q * self.q / (2.0 * self.noise_multiplier * self.noise_multiplier)
+            rdp_per_step = (
+                alpha
+                * self.q
+                * self.q
+                / (2.0 * self.noise_multiplier * self.noise_multiplier)
+            )
             rdp_values.append(rdp_per_step * steps)
         return dict(zip(self.orders, rdp_values))
 
     def get_epsilon_batch(self, steps_list, delta: float = 1e-5) -> list:
         """Vectorized computation for multiple steps.
-        
+
         Args:
             steps_list: List of training step counts
             delta: Target delta for (epsilon, delta)-DP
-            
+
         Returns:
             List of epsilon values, one for each step count
         """
         return compute_epsilon_batch(
-            self.q, 
-            self.noise_multiplier, 
-            steps_list, 
-            self.orders, 
-            delta
+            self.q, self.noise_multiplier, steps_list, self.orders, delta
         )

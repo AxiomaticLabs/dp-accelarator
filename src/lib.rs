@@ -16,7 +16,11 @@ const MAX_STEPS_LOG_A_FRAC: i32 = 1000;
 /// Exact clone of Google's `_log_add`.
 /// Adds two numbers in log space: log(exp(logx) + exp(logy)).
 fn log_add(logx: f64, logy: f64) -> f64 {
-    let (a, b) = if logx < logy { (logx, logy) } else { (logy, logx) };
+    let (a, b) = if logx < logy {
+        (logx, logy)
+    } else {
+        (logy, logx)
+    };
     if a == f64::NEG_INFINITY {
         return b;
     }
@@ -54,11 +58,7 @@ fn log_erfc(x: f64) -> f64 {
     if r == 0.0 {
         // Laurent series at infinity for the tail of erfc:
         //   erfc(x) ~ exp(-x²-0.5/x²+0.625/x⁴) / (x·√π)
-        -PI.ln() / 2.0
-            - x.ln()
-            - x * x
-            - 0.5 * x.powi(-2)
-            + 0.625 * x.powi(-4)
+        -PI.ln() / 2.0 - x.ln() - x * x - 0.5 * x.powi(-2) + 0.625 * x.powi(-4)
             - 37.0 / 24.0 * x.powi(-6)
             + 353.0 / 64.0 * x.powi(-8)
     } else {
@@ -81,9 +81,7 @@ fn compute_log_a_int(q: f64, sigma: f64, alpha: i64) -> f64 {
     for i in 0..=alpha {
         let i_f = i as f64;
         let alpha_f = alpha as f64;
-        let log_coef_i = log_comb(alpha_f, i_f)
-            + i_f * log_q
-            + (alpha_f - i_f) * log1mq;
+        let log_coef_i = log_comb(alpha_f, i_f) + i_f * log_q + (alpha_f - i_f) * log1mq;
         let s = log_coef_i + (i_f * i_f - i_f) / two_sigma_sq;
         log_a = log_add(log_a, s);
     }
@@ -127,10 +125,7 @@ fn compute_log_a_frac(q: f64, sigma: f64, alpha: f64) -> f64 {
 
         // Convergence: terminate when both s0 and s1 are decreasing and
         // sufficiently small relative to the total (matches Google exactly).
-        if log_s0 < last_s0
-            && log_s1 < last_s1
-            && f64::max(log_s0, log_s1) < total - 30.0
-        {
+        if log_s0 < last_s0 && log_s1 < last_s1 && f64::max(log_s0, log_s1) < total - 30.0 {
             return total;
         }
 
@@ -244,4 +239,86 @@ fn compute_epsilon_batch(
 fn _core(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(compute_epsilon_batch, m)?)?;
     Ok(())
+}
+
+// ============================================================================
+// Unit Tests
+// ============================================================================
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_compute_log_a_simple() {
+        // Test compute_log_a with a moderate q (q=1.0 is handled by
+        // compute_rdp_single_order's short-circuit, so skip that edge case).
+        // For q=0.5, sigma=10.0, alpha=2.0, verify the result is finite and positive.
+        let q = 0.5;
+        let sigma = 10.0;
+        let alpha = 2.0;
+        let result = compute_log_a(q, sigma, alpha);
+        assert!(
+            result.is_finite(),
+            "log_a should be finite for valid inputs"
+        );
+        // log_a should be positive for non-trivial q and finite sigma
+        assert!(result > 0.0, "log_a should be positive");
+    }
+
+    #[test]
+    fn test_compute_rdp_single_order_zero_q() {
+        // If q=0 (no data sampled), privacy cost should be 0
+        let result = compute_rdp_single_order(0.0, 1.0, 5.0);
+        assert_eq!(result, 0.0);
+    }
+
+    #[test]
+    fn test_compute_epsilon_batch_empty() {
+        // Should handle empty step list gracefully
+        let res = compute_epsilon_batch(0.01, 1.0, vec![], vec![2.0], 1e-5).unwrap();
+        assert!(res.is_empty());
+    }
+
+    #[test]
+    fn test_compute_rdp_single_order_full_batch() {
+        // q=1.0, sigma=1.0, alpha=5.0 → RDP = alpha/(2*sigma^2) = 2.5
+        let result = compute_rdp_single_order(1.0, 1.0, 5.0);
+        assert!((result - 2.5).abs() < 1e-6);
+    }
+
+    #[test]
+    fn test_rdp_to_epsilon_zero_rdp() {
+        // Zero RDP should yield zero epsilon
+        let eps = rdp_to_epsilon(2.0, 0.0, 1e-5);
+        assert_eq!(eps, 0.0);
+    }
+
+    #[test]
+    fn test_log_add_basic() {
+        // log(exp(0) + exp(0)) = log(2) ≈ 0.6931
+        let result = log_add(0.0, 0.0);
+        assert!((result - 2.0_f64.ln()).abs() < 1e-10);
+    }
+
+    #[test]
+    fn test_log_add_neg_infinity() {
+        // log(0 + exp(x)) = x
+        let result = log_add(f64::NEG_INFINITY, 5.0);
+        assert!((result - 5.0).abs() < 1e-10);
+    }
+
+    #[test]
+    fn test_compute_rdp_infinite_alpha() {
+        // Infinite alpha should return infinity
+        let result = compute_rdp_single_order(0.5, 1.0, f64::INFINITY);
+        assert!(result.is_infinite());
+    }
+
+    #[test]
+    fn test_compute_rdp_zero_sigma() {
+        // Zero noise should return infinity (no privacy)
+        let result = compute_rdp_single_order(0.5, 0.0, 5.0);
+        assert!(result.is_infinite());
+    }
 }

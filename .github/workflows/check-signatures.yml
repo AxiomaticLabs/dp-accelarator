@@ -1,0 +1,28 @@
+name: GPG Signature Check
+
+on: [pull_request]
+
+jobs:
+  check-signatures:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Check for unsigned commits
+        run: |
+          # Get the list of commits in this PR
+          commits=$(git rev-list --no-merges origin/${{ github.base_ref }}..${{ github.head_ref }})
+          
+          # Check each commit for a signature
+          for commit in $commits; do
+            # %G? returns 'G' for good, 'B' for bad, 'N' for none
+            signature=$(git show -s --format='%G?' $commit)
+            
+            if [ "$signature" != "G" ]; then
+              echo "::error::Commit $commit is not signed! Please set up GPG signing."
+              exit 1
+            fi
+          done
+          echo "All commits are signed."

@@ -1,0 +1,12 @@
+[package]
+name = "dp-accelerator"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "_core"
+crate-type = ["cdylib"]
+
+[dependencies]
+pyo3 = { version = "0.20.0", features = ["extension-module"] }
+statrs = "0.16.0"  # CRITICAL: Adds erfc and gamma functions

@@ -1,9 +1,9 @@
-name: GPG Signature Check
+name: DCO Signoff Check
 
 on: [pull_request]
 
 jobs:
-  check-signatures:
+  check-signoffs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -15,14 +15,14 @@ jobs:
           # Get the list of commits in this PR
           commits=$(git rev-list --no-merges origin/${{ github.base_ref }}..${{ github.head_ref }})
           
-          # Check each commit for a signature
+          # Check each commit for signoff
           for commit in $commits; do
-            # %G? returns 'G' for good, 'B' for bad, 'N' for none
-            signature=$(git show -s --format='%G?' $commit)
+            # Check if commit message contains "Signed-off-by:"
+            signoff_count=$(git show -s --format='%B' $commit | grep -c "Signed-off-by:")
             
-            if [ "$signature" != "G" ]; then
-              echo "::error::Commit $commit is not signed! Please set up GPG signing."
+            if [ "$signoff_count" -eq 0 ]; then
+              echo "::error::Commit $commit is not signed off! Please use 'git commit -s'."
               exit 1
             fi
           done
-          echo "All commits are signed."
+          echo "All commits are signed off."
